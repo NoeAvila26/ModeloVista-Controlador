@@ -30,3 +30,22 @@ $routes->post('usuarios/eliminar/(:segment)', 'Usuarios::eliminar/$1');
 $routes->get('login', 'Auth::login');
 $routes->post('autenticar', 'Auth::autenticar');
 $routes->post('salir', 'Auth::salir');
+
+
+// Rutas de administración de archivos
+$routes->get('archivos', 'Archivos::index');
+$routes->post('archivos/subir', 'Archivos::subir');
+$routes->get('archivos/descargar/(:segment)', 'Archivos::descargar/$1');
+$routes->post('archivos/eliminar/(:segment)', 'Archivos::eliminar/$1');
+
+// Rutas de generación de documentos
+$routes->get('documentos', 'Documentos::index');
+$routes->post('documentos/word', 'Documentos::word');
+$routes->post('documentos/excel', 'Documentos::excel');
+$routes->post('documentos/pdf', 'Documentos::pdf');
+
+// Rutas de administración de imágenes
+$routes->get('imagenes', 'Imagenes::index');
+$routes->post('imagenes/subir', 'Imagenes::subir');
+$routes->post('imagenes/eliminar/(:segment)', 'Imagenes::eliminar/$1');
+$routes->get('imagenes/ver/(:segment)', 'Imagenes::ver/$1');

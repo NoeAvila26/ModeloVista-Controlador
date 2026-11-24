@@ -59,10 +59,12 @@ class Auth extends BaseController
                     delete_cookie('correo_recordado');
                 }
 
-                return redirect()->to(site_url('usuarios'));
+                // Redirigir al panel principal
+                return redirect()->to(site_url('inicio'));
             }
         }
 
+        // Si las credenciales son incorrectas
         return redirect()->back()
             ->with('error', 'Correo o contraseña incorrectos.');
     }
@@ -75,4 +77,3 @@ class Auth extends BaseController
         return redirect()->to(site_url('login'));
     }
 }
-

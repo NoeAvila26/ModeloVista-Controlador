@@ -126,5 +126,18 @@ _modules/*
 /phpunit.xml
 
 
-# Datos locales de usuarios
-/writable/datos/usuarios.json
+# Archivos subidos por los usuarios
+/writable/uploads/*
+!/writable/uploads/index.html
+
+# Conservar carpetas de almacenamiento sin subir archivos
+!/writable/uploads/archivos/
+/writable/uploads/archivos/*
+!/writable/uploads/archivos/.gitkeep
+
+!/writable/uploads/imagenes/
+/writable/uploads/imagenes/*
+!/writable/uploads/imagenes/.gitkeep
+
+# Datos locales del sistema
+/writable/datos/*.json
