@@ -6,8 +6,25 @@ use App\Models\UsuarioModel;
 
 class Usuarios extends BaseController
 {
-    public function index(): string
+    // Verificar que exista una sesión activa
+    private function verificarSesion()
     {
+        if (!session()->get('autenticado')) {
+            return redirect()->to(site_url('login'));
+        }
+
+        return null;
+    }
+
+    // Mostrar listado de usuarios
+    public function index()
+    {
+        $acceso = $this->verificarSesion();
+
+        if ($acceso !== null) {
+            return $acceso;
+        }
+
         // Crear una instancia del modelo
         $modelo = new UsuarioModel();
 
@@ -20,16 +37,27 @@ class Usuarios extends BaseController
         ]);
     }
 
-      // Mostrar formulario de creación
-    public function crear(): string
+    // Mostrar formulario de creación
+    public function crear()
     {
+        $acceso = $this->verificarSesion();
+
+        if ($acceso !== null) {
+            return $acceso;
+        }
+
         return view('usuarios/crear');
     }
-
 
     // Guardar un nuevo usuario
     public function guardar()
     {
+        $acceso = $this->verificarSesion();
+
+        if ($acceso !== null) {
+            return $acceso;
+        }
+
         // Obtener los datos del formulario
         $nombre = trim($this->request->getPost('nombre') ?? '');
         $email = strtolower(trim($this->request->getPost('email') ?? ''));
@@ -79,7 +107,8 @@ class Usuarios extends BaseController
             'email' => $email,
             'password' => password_hash($password, PASSWORD_DEFAULT),
             'birthday' => $birthday,
-            'languages' => $languages
+            'languages' => $languages,
+            'rol' => 'usuario'
         ];
 
         // Guardar el usuario
@@ -92,10 +121,15 @@ class Usuarios extends BaseController
             ->with('mensaje', 'Ocurrió un error al guardar el usuario.');
     }
 
-
     // Mostrar formulario de edición
     public function editar(string $id)
     {
+        $acceso = $this->verificarSesion();
+
+        if ($acceso !== null) {
+            return $acceso;
+        }
+
         $modelo = new UsuarioModel();
 
         // Buscar el usuario seleccionado
@@ -114,95 +148,106 @@ class Usuarios extends BaseController
     }
 
     // Procesar la actualización de un usuario
-public function actualizar(string $id)
-{
-    $modelo = new UsuarioModel();
+    public function actualizar(string $id)
+    {
+        $acceso = $this->verificarSesion();
 
-    // Buscar al usuario actual
-    $usuarioActual = $modelo->obtenerUsuarioPorId($id);
+        if ($acceso !== null) {
+            return $acceso;
+        }
 
-    if ($usuarioActual === null) {
-        return redirect()->to(site_url('usuarios'))
-            ->with('mensaje', 'El usuario no existe.');
-    }
+        $modelo = new UsuarioModel();
 
-    // Obtener los datos del formulario
-    $nombre = trim($this->request->getPost('nombre') ?? '');
-    $email = strtolower(trim($this->request->getPost('email') ?? ''));
-    $password = $this->request->getPost('password') ?? '';
-    $birthday = $this->request->getPost('birthday') ?? '';
-    $languages = $this->request->getPost('languages') ?? [];
+        // Buscar al usuario actual
+        $usuarioActual = $modelo->obtenerUsuarioPorId($id);
 
-    // Validar los campos
-    if (
-        $nombre === '' ||
-        !filter_var($email, FILTER_VALIDATE_EMAIL) ||
-        $birthday === '' ||
-        !is_array($languages) ||
-        empty($languages)
-    ) {
-        return redirect()->back()
-            ->with('mensaje', 'Por favor, completa todos los campos.');
-    }
+        if ($usuarioActual === null) {
+            return redirect()->to(site_url('usuarios'))
+                ->with('mensaje', 'El usuario no existe.');
+        }
 
-    // Validar los lenguajes permitidos
-    $permitidos = ['JavaScript', 'Python', 'PHP', 'Java'];
+        // Obtener los datos del formulario
+        $nombre = trim($this->request->getPost('nombre') ?? '');
+        $email = strtolower(trim($this->request->getPost('email') ?? ''));
+        $password = $this->request->getPost('password') ?? '';
+        $birthday = $this->request->getPost('birthday') ?? '';
+        $languages = $this->request->getPost('languages') ?? [];
 
-    if (
-        array_diff($languages, $permitidos) ||
-        count($languages) !== count(array_unique($languages))
-    ) {
-        return redirect()->back()
-            ->with('mensaje', 'Selecciona lenguajes válidos.');
-    }
-
-    // Comprobar que el correo no pertenezca a otro usuario
-    $usuarios = $modelo->obtenerUsuarios();
-
-    foreach ($usuarios as $otroUsuario) {
+        // Validar los campos
         if (
-            $otroUsuario['id'] !== $id &&
-            strtolower($otroUsuario['email']) === $email
+            $nombre === '' ||
+            !filter_var($email, FILTER_VALIDATE_EMAIL) ||
+            $birthday === '' ||
+            !is_array($languages) ||
+            empty($languages)
         ) {
             return redirect()->back()
-                ->with('mensaje', 'Este correo ya está registrado.');
+                ->with('mensaje', 'Por favor, completa todos los campos.');
         }
+
+        // Validar los lenguajes permitidos
+        $permitidos = ['JavaScript', 'Python', 'PHP', 'Java'];
+
+        if (
+            array_diff($languages, $permitidos) ||
+            count($languages) !== count(array_unique($languages))
+        ) {
+            return redirect()->back()
+                ->with('mensaje', 'Selecciona lenguajes válidos.');
+        }
+
+        // Comprobar que el correo no pertenezca a otro usuario
+        $usuarios = $modelo->obtenerUsuarios();
+
+        foreach ($usuarios as $otroUsuario) {
+            if (
+                $otroUsuario['id'] !== $id &&
+                strtolower($otroUsuario['email']) === $email
+            ) {
+                return redirect()->back()
+                    ->with('mensaje', 'Este correo ya está registrado.');
+            }
+        }
+
+        // Preparar los datos actualizados
+        $datos = [
+            'nombre' => $nombre,
+            'email' => $email,
+            'password' => $password !== ''
+                ? password_hash($password, PASSWORD_DEFAULT)
+                : $usuarioActual['password'],
+            'birthday' => $birthday,
+            'languages' => $languages,
+            'rol' => $usuarioActual['rol'] ?? 'usuario'
+        ];
+
+        // Guardar los cambios
+        if ($modelo->actualizarUsuario($id, $datos)) {
+            return redirect()->to(site_url('usuarios'))
+                ->with('mensaje', '¡Usuario actualizado correctamente!');
+        }
+
+        return redirect()->back()
+            ->with('mensaje', 'Ocurrió un error al actualizar el usuario.');
     }
 
-    // Preparar los datos actualizados
-    $datos = [
-        'nombre' => $nombre,
-        'email' => $email,
-        'password' => $password !== ''
-            ? password_hash($password, PASSWORD_DEFAULT)
-            : $usuarioActual['password'],
-        'birthday' => $birthday,
-        'languages' => $languages
-    ];
+    // Procesar la eliminación de un usuario
+    public function eliminar(string $id)
+    {
+        $acceso = $this->verificarSesion();
 
-    // Guardar los cambios
-    if ($modelo->actualizarUsuario($id, $datos)) {
+        if ($acceso !== null) {
+            return $acceso;
+        }
+
+        $modelo = new UsuarioModel();
+
+        if ($modelo->eliminarUsuario($id)) {
+            return redirect()->to(site_url('usuarios'))
+                ->with('mensaje', '¡Usuario eliminado correctamente!');
+        }
+
         return redirect()->to(site_url('usuarios'))
-            ->with('mensaje', '¡Usuario actualizado correctamente!');
+            ->with('mensaje', 'No se encontró el usuario que deseas eliminar.');
     }
-
-    return redirect()->back()
-        ->with('mensaje', 'Ocurrió un error al actualizar el usuario.');
-}
-
-// Procesar la eliminación de un usuario
-public function eliminar(string $id)
-{
-    $modelo = new UsuarioModel();
-
-    if ($modelo->eliminarUsuario($id)) {
-        return redirect()->to(site_url('usuarios'))
-            ->with('mensaje', '¡Usuario eliminado correctamente!');
-    }
-
-    return redirect()->to(site_url('usuarios'))
-        ->with('mensaje', 'No se encontró el usuario que deseas eliminar.');
-}
-
-
 }

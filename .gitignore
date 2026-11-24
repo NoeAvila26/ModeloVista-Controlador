@@ -126,3 +126,5 @@ _modules/*
 /phpunit.xml
 
 
+# Datos locales de usuarios
+/writable/datos/usuarios.json

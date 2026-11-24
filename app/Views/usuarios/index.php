@@ -12,6 +12,8 @@
 
     <h1>Administración de usuarios</h1>
 
+    
+
     <?php if (session()->getFlashdata('mensaje')): ?>
     <p>
         <?= esc(session()->getFlashdata('mensaje')) ?>
@@ -23,6 +25,11 @@
     </a>
 
     <hr>
+    
+    <form action="<?= site_url('salir') ?>" method="POST">
+    <?= csrf_field() ?>
+    <button type="submit">Cerrar sesión</button>
+</form>
 
     <h2>Listado de usuarios</h2>
 

@@ -21,6 +21,24 @@ class UsuarioModel
         return is_array($usuarios) ? $usuarios : [];
     }
 
+    // Buscar un usuario por su correo electrónico
+    public function obtenerUsuarioPorEmail(string $email): ?array
+    {
+    $usuarios = $this->obtenerUsuarios();
+
+    foreach ($usuarios as $usuario) {
+
+        if (
+            isset($usuario['email']) &&
+            strtolower($usuario['email']) === strtolower($email)
+        ) {
+            return $usuario;
+        }
+    }
+
+    return null;
+   }
+
 
     // Registrar un nuevo usuario
     public function crearUsuario(array $datos): bool
